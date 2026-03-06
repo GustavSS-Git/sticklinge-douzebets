@@ -33,7 +33,7 @@ export default function Scoreboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from('predictions')
-        .select('*, profiles!inner(nickname)')
+        .select('*')
         .eq('year', 2026);
       return data ?? [];
     },
