@@ -1,0 +1,151 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useCountries } from '@/hooks/useCountries';
+import { useSettings } from '@/hooks/useSettings';
+import { supabase } from '@/integrations/supabase/client';
+import { AppLayout } from '@/components/AppLayout';
+import { CountrySelector } from '@/components/CountrySelector';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { Lock, Save, CheckCircle2, Heart } from 'lucide-react';
+
+export default function Favourites() {
+  const { user } = useAuth();
+  const { data: countries = [] } = useCountries();
+  const { data: settings } = useSettings();
+  const [selections, setSelections] = useState<Record<string, string | null>>({
+    first: null, second: null, third: null,
+  });
+  const [saving, setSaving] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  const locked = settings?.favourites_locked ?? false;
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('favourite_votes')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('year', 2026)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setExistingId(data.id);
+          setIsSubmitted(data.is_submitted);
+          setSelections({
+            first: data.first_favourite,
+            second: data.second_favourite,
+            third: data.third_favourite,
+          });
+        }
+      });
+  }, [user]);
+
+  const allSelected = Object.values(selections).every(Boolean);
+  const usedIds = Object.values(selections);
+
+  const handleSave = async () => {
+    if (!user || !allSelected) return;
+    setSaving(true);
+
+    const payload = {
+      user_id: user.id,
+      first_favourite: selections.first,
+      second_favourite: selections.second,
+      third_favourite: selections.third,
+      is_submitted: true,
+      submitted_at: new Date().toISOString(),
+      year: 2026,
+    };
+
+    let error;
+    if (existingId) {
+      ({ error } = await supabase.from('favourite_votes').update(payload).eq('id', existingId));
+    } else {
+      const res = await supabase.from('favourite_votes').insert(payload).select().single();
+      error = res.error;
+      if (res.data) setExistingId(res.data.id);
+    }
+
+    if (error) {
+      toast.error('Kunde inte spara. Försök igen.');
+    } else {
+      setIsSubmitted(true);
+      toast.success('Dina favoriter är sparade! ❤️');
+    }
+    setSaving(false);
+  };
+
+  const set = (key: string) => (value: string) => {
+    setSelections((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const favourites = [
+    { key: 'first', label: 'Favorit #1', badge: '❤️' },
+    { key: 'second', label: 'Favorit #2', badge: '🧡' },
+    { key: 'third', label: 'Favorit #3', badge: '💛' },
+  ];
+
+  return (
+    <AppLayout>
+      <div className="max-w-lg mx-auto">
+        <div className="mb-6">
+          <h1 className="text-2xl font-display font-bold mb-1 flex items-center gap-2">
+            <Heart className="w-6 h-6 text-primary" />
+            Mina favoriter
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Vilka låtar tycker du borde vinna? Rösta på dina topp 3!
+          </p>
+        </div>
+
+        {locked && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-accent/10 border border-accent/20 text-accent mb-4">
+            <Lock className="w-4 h-4" />
+            <span className="text-sm font-medium">Favoritröstningen är låst</span>
+          </div>
+        )}
+
+        {isSubmitted && !locked && (
+          <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary mb-4">
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="text-sm font-medium">Röst inskickad! Du kan fortfarande ändra.</span>
+          </div>
+        )}
+
+        <div className="space-y-3 mb-8">
+          {favourites.map(({ key, label, badge }) => (
+            <CountrySelector
+              key={key}
+              label={label}
+              badge={badge}
+              value={selections[key]}
+              onChange={set(key)}
+              countries={countries}
+              disabledIds={usedIds.filter((id) => id !== selections[key])}
+              disabled={locked}
+            />
+          ))}
+        </div>
+
+        {!locked && (
+          <Button
+            onClick={handleSave}
+            disabled={!allSelected || saving}
+            className="w-full gradient-eurovision border-0 font-display font-semibold text-primary-foreground shadow-glow"
+            size="lg"
+          >
+            {saving ? 'Sparar...' : (
+              <span className="flex items-center gap-2">
+                <Save className="w-4 h-4" />
+                {isSubmitted ? 'Uppdatera favoriter' : 'Spara favoriter'}
+              </span>
+            )}
+          </Button>
+        )}
+      </div>
+    </AppLayout>
+  );
+}
