@@ -52,7 +52,7 @@ export default function Scoreboard() {
     queryFn: async () => {
       const { data } = await supabase
         .from('favourite_votes')
-        .select('*, profiles!inner(nickname)')
+        .select('*')
         .eq('year', 2026)
         .eq('is_submitted', true);
       return data ?? [];
