@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Trophy, Heart, BarChart3, User, LogOut, Home } from 'lucide-react';
+import { Trophy, Heart, BarChart3, LogOut } from 'lucide-react';
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { profile, signOut } = useAuth();
@@ -11,7 +11,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { path: '/tippa', label: 'Tippa', icon: Trophy },
     { path: '/favoriter', label: 'Favoriter', icon: Heart },
     { path: '/resultat', label: 'Resultat', icon: BarChart3 },
-    { path: '/profil', label: 'Profil', icon: User },
   ];
 
   const isActive = (path: string) => location.pathname === path;
