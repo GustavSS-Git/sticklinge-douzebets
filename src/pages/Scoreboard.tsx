@@ -101,8 +101,9 @@ export default function Scoreboard() {
     const ptsB = b.prediction?.calculated_points ?? 0;
     if (ptsB !== ptsA) return ptsB - ptsA;
     // Tiebreaker: smaller Sweden position difference is better
-    const diffA = a.prediction?.sweden_final_position != null ? Math.abs(a.prediction.sweden_final_position - 7) : 999;
-    const diffB = b.prediction?.sweden_final_position != null ? Math.abs(b.prediction.sweden_final_position - 7) : 999;
+    const swedenActual = (actualResults as any)?.sweden_actual_position ?? null;
+    const diffA = a.prediction?.sweden_final_position != null && swedenActual != null ? Math.abs(a.prediction.sweden_final_position - swedenActual) : 999;
+    const diffB = b.prediction?.sweden_final_position != null && swedenActual != null ? Math.abs(b.prediction.sweden_final_position - swedenActual) : 999;
     return diffA - diffB;
   });
 
