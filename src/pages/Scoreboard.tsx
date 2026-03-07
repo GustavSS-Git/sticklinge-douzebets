@@ -160,7 +160,7 @@ export default function Scoreboard() {
                   </div>
 
                   {prediction?.is_submitted && (
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                       {[
                         { label: '1:a', id: prediction.first_place },
                         { label: '2:a', id: prediction.second_place },
@@ -174,6 +174,10 @@ export default function Scoreboard() {
                           <CountryBadge country={getCountryById(countries, id)} />
                         </div>
                       ))}
+                      <div className="text-center p-2 rounded-lg bg-secondary">
+                        <p className="text-[10px] text-muted-foreground mb-1">🇸🇪</p>
+                        <span className="text-xs font-bold">{prediction.sweden_final_position ?? '—'}</span>
+                      </div>
                     </div>
                   )}
                 </div>
