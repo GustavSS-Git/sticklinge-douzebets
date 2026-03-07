@@ -205,6 +205,7 @@ export type Database = {
           last_place: string | null
           second_place: string | null
           submitted_at: string | null
+          sweden_final_position: number | null
           third_place: string | null
           updated_at: string
           user_id: string
@@ -221,6 +222,7 @@ export type Database = {
           last_place?: string | null
           second_place?: string | null
           submitted_at?: string | null
+          sweden_final_position?: number | null
           third_place?: string | null
           updated_at?: string
           user_id: string
@@ -237,6 +239,7 @@ export type Database = {
           last_place?: string | null
           second_place?: string | null
           submitted_at?: string | null
+          sweden_final_position?: number | null
           third_place?: string | null
           updated_at?: string
           user_id?: string
