@@ -17,6 +17,7 @@ export default function Predictions() {
   const [selections, setSelections] = useState<Record<string, string | null>>({
     first: null, second: null, third: null, fourth: null, fifth: null, last: null,
   });
+  const [swedenPosition, setSwedenPosition] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
