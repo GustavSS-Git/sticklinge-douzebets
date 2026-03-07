@@ -9,7 +9,7 @@ import Auth from "./pages/Auth";
 import Predictions from "./pages/Predictions";
 import Favourites from "./pages/Favourites";
 import Scoreboard from "./pages/Scoreboard";
-
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,7 +42,7 @@ const App = () => (
             <Route path="/tippa" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
             <Route path="/favoriter" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
             <Route path="/resultat" element={<ProtectedRoute><Scoreboard /></ProtectedRoute>} />
-            
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

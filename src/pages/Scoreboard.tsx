@@ -31,6 +31,14 @@ export default function Scoreboard() {
   const { predictionsLocked, lockTime } = useIsLocked();
   const [tab, setTab] = useState('predictions');
 
+  const { data: actualResults } = useQuery({
+    queryKey: ['actual-results'],
+    queryFn: async () => {
+      const { data } = await supabase.from('actual_results').select('*').eq('year', 2026).maybeSingle();
+      return data;
+    },
+  });
+
   const { data: predictions = [] } = useQuery({
     queryKey: ['all-predictions'],
     queryFn: async () => {
@@ -84,10 +92,19 @@ export default function Scoreboard() {
       rank: idx + 1,
     }));
 
-  // All profiles with submission status
+  // All profiles with submission status, sorted by points then tiebreaker
   const profilesWithStatus = profiles.map((p) => {
     const pred = predictions.find((pr: any) => pr.user_id === p.user_id);
     return { profile: p, prediction: pred ?? null };
+  }).sort((a, b) => {
+    const ptsA = a.prediction?.calculated_points ?? 0;
+    const ptsB = b.prediction?.calculated_points ?? 0;
+    if (ptsB !== ptsA) return ptsB - ptsA;
+    // Tiebreaker: smaller Sweden position difference is better
+    const swedenActual = (actualResults as any)?.sweden_actual_position ?? null;
+    const diffA = a.prediction?.sweden_final_position != null && swedenActual != null ? Math.abs(a.prediction.sweden_final_position - swedenActual) : 999;
+    const diffB = b.prediction?.sweden_final_position != null && swedenActual != null ? Math.abs(b.prediction.sweden_final_position - swedenActual) : 999;
+    return diffA - diffB;
   });
 
   if (!predictionsLocked) {
@@ -160,7 +177,7 @@ export default function Scoreboard() {
                   </div>
 
                   {prediction?.is_submitted && (
-                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
                       {[
                         { label: '1:a', id: prediction.first_place },
                         { label: '2:a', id: prediction.second_place },
@@ -174,6 +191,10 @@ export default function Scoreboard() {
                           <CountryBadge country={getCountryById(countries, id)} />
                         </div>
                       ))}
+                      <div className="text-center p-2 rounded-lg bg-secondary">
+                        <p className="text-[10px] text-muted-foreground mb-1">🇸🇪</p>
+                        <span className="text-xs font-bold">{prediction.sweden_final_position ?? '—'}</span>
+                      </div>
                     </div>
                   )}
                 </div>
