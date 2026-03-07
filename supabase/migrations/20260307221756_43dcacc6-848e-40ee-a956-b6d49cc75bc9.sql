@@ -1,0 +1,1 @@
+ALTER TABLE public.predictions ADD COLUMN sweden_final_position integer DEFAULT NULL;
