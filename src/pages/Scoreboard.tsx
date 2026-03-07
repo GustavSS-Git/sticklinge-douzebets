@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCountries } from '@/hooks/useCountries';
+import { useIsLocked } from '@/hooks/useSettings';
 import { AppLayout } from '@/components/AppLayout';
+import { CountdownTimer } from '@/components/CountdownTimer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Heart, CheckCircle2, XCircle } from 'lucide-react';
+import { Trophy, Heart, CheckCircle2, XCircle, EyeOff } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Country = Tables<'countries'>;
@@ -26,6 +28,7 @@ function CountryBadge({ country }: { country: Country | null }) {
 
 export default function Scoreboard() {
   const { data: countries = [] } = useCountries();
+  const { predictionsLocked, lockTime } = useIsLocked();
   const [tab, setTab] = useState('predictions');
 
   const { data: predictions = [] } = useQuery({
@@ -86,6 +89,26 @@ export default function Scoreboard() {
     const pred = predictions.find((pr: any) => pr.user_id === p.user_id);
     return { profile: p, prediction: pred ?? null };
   });
+
+  if (!predictionsLocked) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto flex flex-col items-center justify-center py-16 px-4 text-center">
+          <EyeOff className="w-12 h-12 text-muted-foreground mb-4" />
+          <h1 className="text-xl font-display font-bold mb-2">Resultattavlan blir synlig när tippningen har stängt.</h1>
+          {lockTime && (
+            <div className="mt-4 w-full max-w-sm">
+              <CountdownTimer
+                lockTime={lockTime}
+                lockedLabel="Tippningen har stängt"
+                openLabel="Tippningen stänger om"
+              />
+            </div>
+          )}
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
