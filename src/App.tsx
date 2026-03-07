@@ -9,7 +9,7 @@ import Auth from "./pages/Auth";
 import Predictions from "./pages/Predictions";
 import Favourites from "./pages/Favourites";
 import Scoreboard from "./pages/Scoreboard";
-
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
