@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Trophy, Heart, BarChart3, Users, Sparkles } from 'lucide-react';
+import { Trophy, Heart, BarChart3, Sparkles } from 'lucide-react';
 
 export default function Landing() {
   const features = [
