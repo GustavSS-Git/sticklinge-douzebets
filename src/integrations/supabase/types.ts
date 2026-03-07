@@ -23,6 +23,7 @@ export type Database = {
           id: string
           last_place: string | null
           second_place: string | null
+          sweden_actual_position: number | null
           third_place: string | null
           updated_at: string
           year: number
@@ -35,6 +36,7 @@ export type Database = {
           id?: string
           last_place?: string | null
           second_place?: string | null
+          sweden_actual_position?: number | null
           third_place?: string | null
           updated_at?: string
           year?: number
@@ -47,6 +49,7 @@ export type Database = {
           id?: string
           last_place?: string | null
           second_place?: string | null
+          sweden_actual_position?: number | null
           third_place?: string | null
           updated_at?: string
           year?: number
@@ -293,6 +296,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
           id: string
           is_admin: boolean
           nickname: string
@@ -301,6 +305,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email?: string | null
           id?: string
           is_admin?: boolean
           nickname: string
@@ -309,6 +314,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email?: string | null
           id?: string
           is_admin?: boolean
           nickname?: string
@@ -325,6 +331,7 @@ export type Database = {
           id: string
           prediction_lock_time: string
           predictions_locked: boolean
+          results_published: boolean
           updated_at: string
         }
         Insert: {
@@ -334,6 +341,7 @@ export type Database = {
           id?: string
           prediction_lock_time?: string
           predictions_locked?: boolean
+          results_published?: boolean
           updated_at?: string
         }
         Update: {
@@ -343,6 +351,7 @@ export type Database = {
           id?: string
           prediction_lock_time?: string
           predictions_locked?: boolean
+          results_published?: boolean
           updated_at?: string
         }
         Relationships: []
