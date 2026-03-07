@@ -11,7 +11,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { path: '/tippa', label: 'Tippa', icon: Trophy },
     { path: '/favoriter', label: 'Favoriter', icon: Heart },
     { path: '/resultat', label: 'Resultat', icon: BarChart3 },
-    { path: '/profil', label: 'Profil', icon: User },
   ];
 
   const isActive = (path: string) => location.pathname === path;
