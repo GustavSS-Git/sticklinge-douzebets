@@ -90,6 +90,26 @@ export default function Scoreboard() {
     return { profile: p, prediction: pred ?? null };
   });
 
+  if (!predictionsLocked) {
+    return (
+      <AppLayout>
+        <div className="max-w-2xl mx-auto flex flex-col items-center justify-center py-16 px-4 text-center">
+          <EyeOff className="w-12 h-12 text-muted-foreground mb-4" />
+          <h1 className="text-xl font-display font-bold mb-2">Resultattavlan blir synlig när tippningen har stängt.</h1>
+          {lockTime && (
+            <div className="mt-4 w-full max-w-sm">
+              <CountdownTimer
+                lockTime={lockTime}
+                lockedLabel="Tippningen har stängt"
+                openLabel="Tippningen stänger om"
+              />
+            </div>
+          )}
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto">
