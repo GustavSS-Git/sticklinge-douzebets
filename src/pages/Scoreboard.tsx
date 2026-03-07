@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCountries } from '@/hooks/useCountries';
+import { useIsLocked } from '@/hooks/useSettings';
 import { AppLayout } from '@/components/AppLayout';
+import { CountdownTimer } from '@/components/CountdownTimer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Heart, CheckCircle2, XCircle } from 'lucide-react';
+import { Trophy, Heart, CheckCircle2, XCircle, EyeOff } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
 
 type Country = Tables<'countries'>;
