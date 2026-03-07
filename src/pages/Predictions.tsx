@@ -7,6 +7,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { CountrySelector } from '@/components/CountrySelector';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { Save, CheckCircle2 } from 'lucide-react';
 
@@ -34,6 +35,7 @@ export default function Predictions() {
         if (data) {
           setExistingId(data.id);
           setIsSubmitted(data.is_submitted);
+          setSwedenPosition((data as any).sweden_final_position ?? null);
           setSelections({
             first: data.first_place,
             second: data.second_place,
@@ -46,7 +48,7 @@ export default function Predictions() {
       });
   }, [user]);
 
-  const allSelected = Object.values(selections).every(Boolean);
+  const allSelected = Object.values(selections).every(Boolean) && swedenPosition !== null;
   const usedIds = Object.values(selections);
 
   const handleSave = async () => {
@@ -61,10 +63,11 @@ export default function Predictions() {
       fourth_place: selections.fourth,
       fifth_place: selections.fifth,
       last_place: selections.last,
+      sweden_final_position: swedenPosition,
       is_submitted: true,
       submitted_at: new Date().toISOString(),
       year: 2026,
-    };
+    } as any;
 
     let error;
     if (existingId) {
@@ -139,7 +142,7 @@ export default function Predictions() {
           ))}
         </div>
 
-        <div className="space-y-3 mb-8">
+        <div className="space-y-3 mb-6">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sistaplatsen</p>
           <CountrySelector
             label="Sist i tävlingen"
@@ -150,6 +153,32 @@ export default function Predictions() {
             disabledIds={usedIds.filter((id) => id !== selections.last)}
             disabled={predictionsLocked}
           />
+        </div>
+
+        <div className="space-y-3 mb-8">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sveriges placering</p>
+          <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
+            <span className="text-2xl">🇸🇪</span>
+            <div className="flex-1">
+              <p className="text-sm font-medium">Vilken placering får Sverige?</p>
+            </div>
+            <Select
+              value={swedenPosition?.toString() ?? ''}
+              onValueChange={(v) => setSwedenPosition(Number(v))}
+              disabled={predictionsLocked}
+            >
+              <SelectTrigger className="w-20">
+                <SelectValue placeholder="#" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 26 }, (_, i) => i + 1).map((n) => (
+                  <SelectItem key={n} value={n.toString()}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {!predictionsLocked && (
