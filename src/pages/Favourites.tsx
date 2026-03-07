@@ -191,43 +191,6 @@ export default function Favourites() {
           </Button>
         )}
 
-        {/* Leaderboard */}
-        <div>
-          <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
-            🏆 Favorittoppen
-          </h2>
-          {sortedFavourites.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Inga favoritröster ännu. Var först att rösta!
-            </p>
-          ) : (
-            <div className="space-y-2">
-              {sortedFavourites.map(({ country, points, votes, rank }) => (
-                <div
-                  key={country?.id ?? rank}
-                  className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border"
-                >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-sm shrink-0 ${
-                    rank === 1 ? 'gradient-gold text-accent-foreground' :
-                    rank === 2 ? 'bg-secondary text-foreground' :
-                    rank === 3 ? 'bg-secondary text-foreground' :
-                    'bg-muted text-muted-foreground'
-                  }`}>
-                    {rank}
-                  </div>
-                  <div className="flex-1 flex items-center gap-2">
-                    <span className="text-2xl">{country?.flag_emoji}</span>
-                    <span className="font-medium text-sm">{country?.country_name}</span>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-display font-bold text-sm">{points} p</p>
-                    <p className="text-[10px] text-muted-foreground">{votes} röster</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
     </AppLayout>
   );
