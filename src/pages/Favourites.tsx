@@ -1,26 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountries } from '@/hooks/useCountries';
-import { useSettings } from '@/hooks/useSettings';
+import { useIsLocked } from '@/hooks/useSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
+import { CountdownTimer } from '@/components/CountdownTimer';
 import { CountrySelector } from '@/components/CountrySelector';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Lock, Save, CheckCircle2, Heart } from 'lucide-react';
+import { Save, CheckCircle2, Heart } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Country = Tables<'countries'>;
+
+function getCountryById(countries: Country[], id: string | null) {
+  if (!id) return null;
+  return countries.find((c) => c.id === id) ?? null;
+}
 
 export default function Favourites() {
   const { user } = useAuth();
   const { data: countries = [] } = useCountries();
-  const { data: settings } = useSettings();
+  const { favouritesLocked, lockTime } = useIsLocked();
   const [selections, setSelections] = useState<Record<string, string | null>>({
     first: null, second: null, third: null,
   });
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const locked = settings?.favourites_locked ?? false;
 
   useEffect(() => {
     if (!user) return;
@@ -43,11 +51,45 @@ export default function Favourites() {
       });
   }, [user]);
 
+  // Leaderboard data
+  const { data: allFavourites = [] } = useQuery({
+    queryKey: ['all-favourites'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('favourite_votes')
+        .select('*')
+        .eq('year', 2026)
+        .eq('is_submitted', true);
+      return data ?? [];
+    },
+  });
+
+  const favouriteScores = new Map<string, { points: number; votes: number }>();
+  allFavourites.forEach((fav) => {
+    [
+      { id: fav.first_favourite, pts: 3 },
+      { id: fav.second_favourite, pts: 2 },
+      { id: fav.third_favourite, pts: 1 },
+    ].forEach(({ id, pts }) => {
+      if (!id) return;
+      const existing = favouriteScores.get(id) ?? { points: 0, votes: 0 };
+      favouriteScores.set(id, { points: existing.points + pts, votes: existing.votes + 1 });
+    });
+  });
+
+  const sortedFavourites = [...favouriteScores.entries()]
+    .sort((a, b) => b[1].points - a[1].points)
+    .map(([countryId, score], idx) => ({
+      country: getCountryById(countries, countryId),
+      ...score,
+      rank: idx + 1,
+    }));
+
   const allSelected = Object.values(selections).every(Boolean);
   const usedIds = Object.values(selections);
 
   const handleSave = async () => {
-    if (!user || !allSelected) return;
+    if (!user || !allSelected || favouritesLocked) return;
     setSaving(true);
 
     const payload = {
@@ -101,14 +143,17 @@ export default function Favourites() {
           </p>
         </div>
 
-        {locked && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-accent/10 border border-accent/20 text-accent mb-4">
-            <Lock className="w-4 h-4" />
-            <span className="text-sm font-medium">Favoritröstningen är låst</span>
+        {lockTime && (
+          <div className="mb-4">
+            <CountdownTimer
+              lockTime={lockTime}
+              lockedLabel="Favoritröstningen har stängt"
+              openLabel="Röstningen stänger om"
+            />
           </div>
         )}
 
-        {isSubmitted && !locked && (
+        {isSubmitted && !favouritesLocked && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary mb-4">
             <CheckCircle2 className="w-4 h-4" />
             <span className="text-sm font-medium">Röst inskickad! Du kan fortfarande ändra.</span>
@@ -125,16 +170,16 @@ export default function Favourites() {
               onChange={set(key)}
               countries={countries}
               disabledIds={usedIds.filter((id) => id !== selections[key])}
-              disabled={locked}
+              disabled={favouritesLocked}
             />
           ))}
         </div>
 
-        {!locked && (
+        {!favouritesLocked && (
           <Button
             onClick={handleSave}
             disabled={!allSelected || saving}
-            className="w-full gradient-eurovision border-0 font-display font-semibold text-primary-foreground shadow-glow"
+            className="w-full gradient-eurovision border-0 font-display font-semibold text-primary-foreground shadow-glow mb-8"
             size="lg"
           >
             {saving ? 'Sparar...' : (
@@ -145,6 +190,44 @@ export default function Favourites() {
             )}
           </Button>
         )}
+
+        {/* Leaderboard */}
+        <div>
+          <h2 className="text-lg font-display font-bold mb-3 flex items-center gap-2">
+            🏆 Favorittoppen
+          </h2>
+          {sortedFavourites.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Inga favoritröster ännu. Var först att rösta!
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {sortedFavourites.map(({ country, points, votes, rank }) => (
+                <div
+                  key={country?.id ?? rank}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border"
+                >
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-display font-bold text-sm shrink-0 ${
+                    rank === 1 ? 'gradient-gold text-accent-foreground' :
+                    rank === 2 ? 'bg-secondary text-foreground' :
+                    rank === 3 ? 'bg-secondary text-foreground' :
+                    'bg-muted text-muted-foreground'
+                  }`}>
+                    {rank}
+                  </div>
+                  <div className="flex-1 flex items-center gap-2">
+                    <span className="text-2xl">{country?.flag_emoji}</span>
+                    <span className="font-medium text-sm">{country?.country_name}</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-display font-bold text-sm">{points} p</p>
+                    <p className="text-[10px] text-muted-foreground">{votes} röster</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </AppLayout>
   );
