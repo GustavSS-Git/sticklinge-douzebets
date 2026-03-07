@@ -1,26 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountries } from '@/hooks/useCountries';
-import { useSettings } from '@/hooks/useSettings';
+import { useIsLocked } from '@/hooks/useSettings';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
+import { CountdownTimer } from '@/components/CountdownTimer';
 import { CountrySelector } from '@/components/CountrySelector';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Lock, Save, CheckCircle2 } from 'lucide-react';
+import { Save, CheckCircle2 } from 'lucide-react';
 
 export default function Predictions() {
   const { user } = useAuth();
   const { data: countries = [] } = useCountries();
-  const { data: settings } = useSettings();
+  const { predictionsLocked, lockTime } = useIsLocked();
   const [selections, setSelections] = useState<Record<string, string | null>>({
     first: null, second: null, third: null, fourth: null, fifth: null, last: null,
   });
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const locked = settings?.predictions_locked ?? false;
 
   useEffect(() => {
     if (!user) return;
@@ -50,7 +49,7 @@ export default function Predictions() {
   const usedIds = Object.values(selections);
 
   const handleSave = async () => {
-    if (!user || !allSelected) return;
+    if (!user || !allSelected || predictionsLocked) return;
     setSaving(true);
 
     const payload = {
@@ -106,14 +105,17 @@ export default function Predictions() {
           </p>
         </div>
 
-        {locked && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-accent/10 border border-accent/20 text-accent mb-4">
-            <Lock className="w-4 h-4" />
-            <span className="text-sm font-medium">Tippningen är låst</span>
+        {lockTime && (
+          <div className="mb-4">
+            <CountdownTimer
+              lockTime={lockTime}
+              lockedLabel="Tippningen har stängt"
+              openLabel="Tippningen stänger om"
+            />
           </div>
         )}
 
-        {isSubmitted && !locked && (
+        {isSubmitted && !predictionsLocked && (
           <div className="flex items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20 text-primary mb-4">
             <CheckCircle2 className="w-4 h-4" />
             <span className="text-sm font-medium">Tips inskickat! Du kan fortfarande ändra.</span>
@@ -131,7 +133,7 @@ export default function Predictions() {
               onChange={set(key)}
               countries={countries}
               disabledIds={usedIds.filter((id) => id !== selections[key])}
-              disabled={locked}
+              disabled={predictionsLocked}
             />
           ))}
         </div>
@@ -145,11 +147,11 @@ export default function Predictions() {
             onChange={set('last')}
             countries={countries}
             disabledIds={usedIds.filter((id) => id !== selections.last)}
-            disabled={locked}
+            disabled={predictionsLocked}
           />
         </div>
 
-        {!locked && (
+        {!predictionsLocked && (
           <Button
             onClick={handleSave}
             disabled={!allSelected || saving}

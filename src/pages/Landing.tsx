@@ -1,13 +1,12 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Trophy, Heart, BarChart3, Users, Sparkles } from 'lucide-react';
+import { Trophy, Heart, BarChart3, Sparkles } from 'lucide-react';
 
 export default function Landing() {
   const features = [
     { icon: Trophy, title: 'Tippa Topp 5', desc: 'Förutspå vilka länder som hamnar i toppen – och vem som kommer sist.' },
     { icon: Heart, title: 'Rösta på favoriter', desc: 'Välj dina 3 personliga favoriter och se vem som borde ha vunnit.' },
     { icon: BarChart3, title: 'Se resultattavlan', desc: 'Jämför dina tips med familj och vänner i realtid.' },
-    { icon: Users, title: 'Privat & roligt', desc: 'Bara för oss – inga pengar, bara Eurovision-ära!' },
   ];
 
   return (

@@ -323,6 +323,7 @@ export type Database = {
           created_at: string
           favourites_locked: boolean
           id: string
+          prediction_lock_time: string
           predictions_locked: boolean
           updated_at: string
         }
@@ -331,6 +332,7 @@ export type Database = {
           created_at?: string
           favourites_locked?: boolean
           id?: string
+          prediction_lock_time?: string
           predictions_locked?: boolean
           updated_at?: string
         }
@@ -339,6 +341,7 @@ export type Database = {
           created_at?: string
           favourites_locked?: boolean
           id?: string
+          prediction_lock_time?: string
           predictions_locked?: boolean
           updated_at?: string
         }
