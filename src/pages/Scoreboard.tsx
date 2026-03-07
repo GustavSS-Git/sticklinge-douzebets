@@ -31,6 +31,14 @@ export default function Scoreboard() {
   const { predictionsLocked, lockTime } = useIsLocked();
   const [tab, setTab] = useState('predictions');
 
+  const { data: actualResults } = useQuery({
+    queryKey: ['actual-results'],
+    queryFn: async () => {
+      const { data } = await supabase.from('actual_results').select('*').eq('year', 2026).maybeSingle();
+      return data;
+    },
+  });
+
   const { data: predictions = [] } = useQuery({
     queryKey: ['all-predictions'],
     queryFn: async () => {
