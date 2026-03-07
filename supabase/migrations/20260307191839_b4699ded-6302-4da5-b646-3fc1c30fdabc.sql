@@ -1,0 +1,1 @@
+ALTER TABLE public.settings ADD COLUMN prediction_lock_time timestamp with time zone NOT NULL DEFAULT '2026-05-16 21:00:00+00';
