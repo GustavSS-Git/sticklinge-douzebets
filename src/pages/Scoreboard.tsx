@@ -28,6 +28,7 @@ function CountryBadge({ country }: { country: Country | null }) {
 
 export default function Scoreboard() {
   const { data: countries = [] } = useCountries();
+  const { predictionsLocked, lockTime } = useIsLocked();
   const [tab, setTab] = useState('predictions');
 
   const { data: predictions = [] } = useQuery({
