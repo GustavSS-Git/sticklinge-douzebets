@@ -84,10 +84,18 @@ export default function Scoreboard() {
       rank: idx + 1,
     }));
 
-  // All profiles with submission status
+  // All profiles with submission status, sorted by points then tiebreaker
   const profilesWithStatus = profiles.map((p) => {
     const pred = predictions.find((pr: any) => pr.user_id === p.user_id);
     return { profile: p, prediction: pred ?? null };
+  }).sort((a, b) => {
+    const ptsA = a.prediction?.calculated_points ?? 0;
+    const ptsB = b.prediction?.calculated_points ?? 0;
+    if (ptsB !== ptsA) return ptsB - ptsA;
+    // Tiebreaker: smaller Sweden position difference is better
+    const diffA = a.prediction?.sweden_final_position != null ? Math.abs(a.prediction.sweden_final_position - 7) : 999;
+    const diffB = b.prediction?.sweden_final_position != null ? Math.abs(b.prediction.sweden_final_position - 7) : 999;
+    return diffA - diffB;
   });
 
   if (!predictionsLocked) {

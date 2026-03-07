@@ -42,7 +42,7 @@ const App = () => (
             <Route path="/tippa" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
             <Route path="/favoriter" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
             <Route path="/resultat" element={<ProtectedRoute><Scoreboard /></ProtectedRoute>} />
-            
+            <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
