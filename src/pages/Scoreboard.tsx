@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCountries } from '@/hooks/useCountries';
-import { useIsLocked } from '@/hooks/useSettings';
+import { useIsLocked, useSettings } from '@/hooks/useSettings';
 import { AppLayout } from '@/components/AppLayout';
 import { CountdownTimer } from '@/components/CountdownTimer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trophy, Heart, CheckCircle2, XCircle, EyeOff } from 'lucide-react';
+import { Trophy, Heart, CheckCircle2, XCircle, EyeOff, Sparkles } from 'lucide-react';
 import type { Tables } from '@/integrations/supabase/types';
+import confetti from 'canvas-confetti';
 
 type Country = Tables<'countries'>;
 
@@ -29,7 +30,10 @@ function CountryBadge({ country }: { country: Country | null }) {
 export default function Scoreboard() {
   const { data: countries = [] } = useCountries();
   const { predictionsLocked, lockTime } = useIsLocked();
+  const { data: settings } = useSettings();
   const [tab, setTab] = useState('predictions');
+
+  const resultsPublished = settings?.results_published ?? false;
 
   const { data: actualResults } = useQuery({
     queryKey: ['actual-results'],
@@ -42,10 +46,7 @@ export default function Scoreboard() {
   const { data: predictions = [] } = useQuery({
     queryKey: ['all-predictions'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('predictions')
-        .select('*')
-        .eq('year', 2026);
+      const { data } = await supabase.from('predictions').select('*').eq('year', 2026);
       return data ?? [];
     },
   });
@@ -61,14 +62,24 @@ export default function Scoreboard() {
   const { data: favourites = [] } = useQuery({
     queryKey: ['all-favourites'],
     queryFn: async () => {
-      const { data } = await supabase
-        .from('favourite_votes')
-        .select('*')
-        .eq('year', 2026)
-        .eq('is_submitted', true);
+      const { data } = await supabase.from('favourite_votes').select('*').eq('year', 2026).eq('is_submitted', true);
       return data ?? [];
     },
   });
+
+  // Fire confetti when results are published
+  useEffect(() => {
+    if (resultsPublished) {
+      const duration = 3000;
+      const end = Date.now() + duration;
+      const frame = () => {
+        confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#e91e8c', '#7c3aed', '#3b82f6', '#fbbf24'] });
+        confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#e91e8c', '#7c3aed', '#3b82f6', '#fbbf24'] });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      };
+      frame();
+    }
+  }, [resultsPublished]);
 
   // Aggregate favourites
   const favouriteScores = new Map<string, { points: number; votes: number }>();
@@ -93,19 +104,21 @@ export default function Scoreboard() {
     }));
 
   // All profiles with submission status, sorted by points then tiebreaker
+  const swedenActual = actualResults?.sweden_actual_position ?? null;
   const profilesWithStatus = profiles.map((p) => {
     const pred = predictions.find((pr: any) => pr.user_id === p.user_id);
-    return { profile: p, prediction: pred ?? null };
+    const swedenDiff = pred?.sweden_final_position != null && swedenActual != null
+      ? Math.abs(pred.sweden_final_position - swedenActual)
+      : 999;
+    return { profile: p, prediction: pred ?? null, swedenDiff };
   }).sort((a, b) => {
     const ptsA = a.prediction?.calculated_points ?? 0;
     const ptsB = b.prediction?.calculated_points ?? 0;
     if (ptsB !== ptsA) return ptsB - ptsA;
-    // Tiebreaker: smaller Sweden position difference is better
-    const swedenActual = (actualResults as any)?.sweden_actual_position ?? null;
-    const diffA = a.prediction?.sweden_final_position != null && swedenActual != null ? Math.abs(a.prediction.sweden_final_position - swedenActual) : 999;
-    const diffB = b.prediction?.sweden_final_position != null && swedenActual != null ? Math.abs(b.prediction.sweden_final_position - swedenActual) : 999;
-    return diffA - diffB;
+    return a.swedenDiff - b.swedenDiff;
   });
+
+  const winner = resultsPublished && profilesWithStatus.length > 0 ? profilesWithStatus[0] : null;
 
   if (!predictionsLocked) {
     return (
@@ -132,6 +145,65 @@ export default function Scoreboard() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-display font-bold mb-4">Resultattavla</h1>
 
+        {/* Eurovision Results Section */}
+        {resultsPublished && actualResults && (
+          <div className="mb-6 space-y-4">
+            {/* Winner Banner */}
+            {winner && (
+              <div className="relative overflow-hidden rounded-2xl gradient-eurovision p-5 text-center shadow-glow">
+                <Sparkles className="absolute top-3 left-3 w-5 h-5 text-primary-foreground/60 animate-pulse" />
+                <Sparkles className="absolute top-3 right-3 w-5 h-5 text-primary-foreground/60 animate-pulse" />
+                <p className="text-3xl mb-1">🏆</p>
+                <p className="font-display font-bold text-lg text-primary-foreground">
+                  Vinnare av Sticklinge DouzeBets 2026
+                </p>
+                <p className="font-display font-bold text-2xl text-primary-foreground mt-1">
+                  {winner.profile.nickname}
+                </p>
+                <p className="text-sm text-primary-foreground/80 mt-1">
+                  {winner.prediction?.calculated_points ?? 0} poäng
+                </p>
+              </div>
+            )}
+
+            {/* Actual Eurovision Results */}
+            <div className="rounded-xl bg-card border border-border p-4">
+              <h2 className="font-display font-bold text-base mb-3 flex items-center gap-2">
+                <Trophy className="w-4 h-4 text-accent" />
+                Eurovision-resultatet
+              </h2>
+              <div className="space-y-1.5">
+                {[
+                  { pos: '1', id: actualResults.first_place },
+                  { pos: '2', id: actualResults.second_place },
+                  { pos: '3', id: actualResults.third_place },
+                  { pos: '4', id: actualResults.fourth_place },
+                  { pos: '5', id: actualResults.fifth_place },
+                ].map(({ pos, id }) => {
+                  const country = getCountryById(countries, id);
+                  return (
+                    <div key={pos} className="flex items-center gap-2 text-sm">
+                      <span className="w-5 text-right font-display font-bold text-muted-foreground">{pos}.</span>
+                      <span className="text-lg">{country?.flag_emoji}</span>
+                      <span className="font-medium">{country?.country_name ?? '—'}</span>
+                    </div>
+                  );
+                })}
+                <div className="border-t border-border my-2" />
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="w-5 text-right font-display font-bold text-destructive">💀</span>
+                  <span className="text-lg">{getCountryById(countries, actualResults.last_place)?.flag_emoji}</span>
+                  <span className="font-medium">Sist: {getCountryById(countries, actualResults.last_place)?.country_name ?? '—'}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="w-5 text-right">🇸🇪</span>
+                  <span className="font-medium">Sveriges placering: {swedenActual ?? '—'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList className="w-full mb-4 bg-card">
             <TabsTrigger value="predictions" className="flex-1 gap-1 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
@@ -146,59 +218,80 @@ export default function Scoreboard() {
 
           <TabsContent value="predictions">
             <div className="space-y-3">
-              {profilesWithStatus.map(({ profile, prediction }) => (
-                <div
-                  key={profile.id}
-                  className="p-4 rounded-xl bg-card border border-border"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full gradient-eurovision flex items-center justify-center text-xs font-bold text-primary-foreground">
-                        {profile.nickname.charAt(0).toUpperCase()}
+              {profilesWithStatus.map(({ profile, prediction, swedenDiff }, idx) => {
+                const medal = resultsPublished ? (idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : null) : null;
+                const rank = idx + 1;
+                return (
+                  <div
+                    key={profile.id}
+                    className={`p-4 rounded-xl bg-card border ${
+                      resultsPublished && idx === 0 ? 'border-accent shadow-gold' :
+                      resultsPublished && idx <= 2 ? 'border-primary/30' :
+                      'border-border'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        {resultsPublished ? (
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                            idx === 0 ? 'gradient-gold text-accent-foreground' :
+                            idx <= 2 ? 'gradient-eurovision text-primary-foreground' :
+                            'bg-secondary text-secondary-foreground'
+                          }`}>
+                            {medal ?? rank}
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-full gradient-eurovision flex items-center justify-center text-xs font-bold text-primary-foreground">
+                            {profile.nickname.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-display font-semibold text-sm">{profile.nickname}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {prediction?.calculated_points ?? 0} poäng
+                            {resultsPublished && swedenDiff < 999 && (
+                              <span className="ml-1 text-muted-foreground/70">(🇸🇪 ±{swedenDiff})</span>
+                            )}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-display font-semibold text-sm">{profile.nickname}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {prediction?.calculated_points ?? 0} poäng
-                        </p>
-                      </div>
+                      {prediction?.is_submitted ? (
+                        <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Inskickat
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                          <XCircle className="w-3 h-3" />
+                          Ej inskickat
+                        </span>
+                      )}
                     </div>
-                    {prediction?.is_submitted ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-primary bg-primary/10 px-2 py-1 rounded-full">
-                        <CheckCircle2 className="w-3 h-3" />
-                        Inskickat
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
-                        <XCircle className="w-3 h-3" />
-                        Ej inskickat
-                      </span>
+
+                    {prediction?.is_submitted && (
+                      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
+                        {[
+                          { label: '1:a', id: prediction.first_place },
+                          { label: '2:a', id: prediction.second_place },
+                          { label: '3:e', id: prediction.third_place },
+                          { label: '4:e', id: prediction.fourth_place },
+                          { label: '5:e', id: prediction.fifth_place },
+                          { label: 'Sist', id: prediction.last_place },
+                        ].map(({ label, id }) => (
+                          <div key={label} className="text-center p-2 rounded-lg bg-secondary">
+                            <p className="text-[10px] text-muted-foreground mb-1">{label}</p>
+                            <CountryBadge country={getCountryById(countries, id)} />
+                          </div>
+                        ))}
+                        <div className="text-center p-2 rounded-lg bg-secondary">
+                          <p className="text-[10px] text-muted-foreground mb-1">🇸🇪</p>
+                          <span className="text-xs font-bold">{prediction.sweden_final_position ?? '—'}</span>
+                        </div>
+                      </div>
                     )}
                   </div>
-
-                  {prediction?.is_submitted && (
-                    <div className="grid grid-cols-4 sm:grid-cols-7 gap-2">
-                      {[
-                        { label: '1:a', id: prediction.first_place },
-                        { label: '2:a', id: prediction.second_place },
-                        { label: '3:e', id: prediction.third_place },
-                        { label: '4:e', id: prediction.fourth_place },
-                        { label: '5:e', id: prediction.fifth_place },
-                        { label: 'Sist', id: prediction.last_place },
-                      ].map(({ label, id }) => (
-                        <div key={label} className="text-center p-2 rounded-lg bg-secondary">
-                          <p className="text-[10px] text-muted-foreground mb-1">{label}</p>
-                          <CountryBadge country={getCountryById(countries, id)} />
-                        </div>
-                      ))}
-                      <div className="text-center p-2 rounded-lg bg-secondary">
-                        <p className="text-[10px] text-muted-foreground mb-1">🇸🇪</p>
-                        <span className="text-xs font-bold">{prediction.sweden_final_position ?? '—'}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </TabsContent>
 

@@ -11,6 +11,9 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const body = await req.json().catch(() => ({}))
+    const publish = body.publish ?? false
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -52,6 +55,9 @@ Deno.serve(async (req) => {
 
     const actualWinner = results.first_place
     const actualLast = results.last_place
+    const swedenActual = results.sweden_actual_position
+
+    const scoredPredictions = []
 
     for (const pred of predictions) {
       let points = 0
@@ -64,7 +70,7 @@ Deno.serve(async (req) => {
         pred.fifth_place,
       ].filter(Boolean)
 
-      // +1 for each correct country in top 5 (order doesn't matter)
+      // +1 for each correct country in top 5
       for (const country of predTop5) {
         if (actualTop5.includes(country)) points += 1
       }
@@ -75,19 +81,39 @@ Deno.serve(async (req) => {
       // +2 for correct last place
       if (pred.last_place === actualLast) points += 2
 
+      // Sweden tiebreaker difference
+      const swedenDiff = pred.sweden_final_position != null && swedenActual != null
+        ? Math.abs(pred.sweden_final_position - swedenActual)
+        : 999
+
       await supabaseAdmin
         .from('predictions')
         .update({ calculated_points: points })
         .eq('id', pred.id)
+
+      scoredPredictions.push({
+        id: pred.id,
+        user_id: pred.user_id,
+        points,
+        swedenDiff,
+      })
     }
 
-    // Mark results as published
-    await supabaseAdmin
-      .from('settings')
-      .update({ results_published: true })
-      .neq('id', '00000000-0000-0000-0000-000000000000') // update all rows
+    // If publish flag is set, mark results as published
+    if (publish) {
+      await supabaseAdmin
+        .from('settings')
+        .update({ results_published: true })
+        .neq('id', '00000000-0000-0000-0000-000000000000')
+    }
 
-    return new Response(JSON.stringify({ success: true, processed: predictions.length }), {
+    // Sort for ranking preview
+    scoredPredictions.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points
+      return a.swedenDiff - b.swedenDiff
+    })
+
+    return new Response(JSON.stringify({ success: true, processed: predictions.length, publish, ranking: scoredPredictions }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (err) {
