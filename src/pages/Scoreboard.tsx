@@ -277,16 +277,34 @@ export default function Scoreboard() {
                           { label: '4:e', id: prediction.fourth_place },
                           { label: '5:e', id: prediction.fifth_place },
                           { label: 'Sist', id: prediction.last_place },
-                        ].map(({ label, id }) => (
-                          <div key={label} className="text-center p-2 rounded-lg bg-secondary">
-                            <p className="text-[10px] text-muted-foreground mb-1">{label}</p>
-                            <CountryBadge country={getCountryById(countries, id)} />
-                          </div>
-                        ))}
-                        <div className="text-center p-2 rounded-lg bg-secondary">
-                          <p className="text-[10px] text-muted-foreground mb-1">🇸🇪</p>
-                          <span className="text-xs font-bold">{prediction.sweden_final_position ?? '—'}</span>
-                        </div>
+                        ].map(({ label, id }) => {
+                          let highlight = '';
+                          if (resultsPublished && actualResults && id) {
+                            const actualTop5 = [actualResults.first_place, actualResults.second_place, actualResults.third_place, actualResults.fourth_place, actualResults.fifth_place];
+                            if (label === 'Sist') {
+                              if (id === actualResults.last_place) highlight = 'ring-2 ring-green-500';
+                            } else if (id === actualResults.first_place && prediction.first_place === id) {
+                              highlight = 'ring-2 ring-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.4)]';
+                            } else if (actualTop5.includes(id)) {
+                              highlight = 'ring-2 ring-green-500';
+                            }
+                          }
+                          return (
+                            <div key={label} className={`text-center p-2 rounded-lg bg-secondary ${highlight}`}>
+                              <p className="text-[10px] text-muted-foreground mb-1">{label}</p>
+                              <CountryBadge country={getCountryById(countries, id)} />
+                            </div>
+                          );
+                        })}
+                        {(() => {
+                          const swedenCorrect = resultsPublished && actualResults && prediction.sweden_final_position != null && prediction.sweden_final_position === swedenActual;
+                          return (
+                            <div className={`text-center p-2 rounded-lg bg-secondary ${swedenCorrect ? 'ring-2 ring-green-500' : ''}`}>
+                              <p className="text-[10px] text-muted-foreground mb-1">🇸🇪</p>
+                              <span className="text-xs font-bold">{prediction.sweden_final_position ?? '—'}</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
                   </div>
