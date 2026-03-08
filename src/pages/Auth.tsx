@@ -17,7 +17,6 @@ export default function Auth({ mode }: AuthPageProps) {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
   const [nickname, setNickname] = useState('');
 
   const isRegister = mode === 'register';
