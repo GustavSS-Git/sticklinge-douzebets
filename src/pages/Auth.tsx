@@ -17,7 +17,6 @@ export default function Auth({ mode }: AuthPageProps) {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
   const [nickname, setNickname] = useState('');
 
   const isRegister = mode === 'register';
@@ -27,11 +26,6 @@ export default function Auth({ mode }: AuthPageProps) {
     setLoading(true);
 
     if (isRegister) {
-      if (username.trim().length < 3) {
-        toast.error('Användarnamn måste vara minst 3 tecken');
-        setLoading(false);
-        return;
-      }
       if (nickname.trim().length < 1) {
         toast.error('Ange ett smeknamn');
         setLoading(false);
@@ -42,7 +36,7 @@ export default function Auth({ mode }: AuthPageProps) {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, username.trim(), nickname.trim());
+      const { error } = await signUp(email, password, nickname.trim());
       if (error) {
         toast.error(error);
       } else {
@@ -100,30 +94,17 @@ export default function Auth({ mode }: AuthPageProps) {
           </div>
 
           {isRegister && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="username">Användarnamn</Label>
-                <Input
-                  id="username"
-                  placeholder="ditt_namn"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="bg-card"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nickname">Smeknamn (visas publikt)</Label>
-                <Input
-                  id="nickname"
-                  placeholder="Eurovision-experten"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  required
-                  className="bg-card"
-                />
-              </div>
-            </>
+            <div className="space-y-2">
+              <Label htmlFor="nickname">Smeknamn (visas publikt)</Label>
+              <Input
+                id="nickname"
+                placeholder="Eurovision-experten"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                required
+                className="bg-card"
+              />
+            </div>
           )}
 
           <div className="space-y-2">
