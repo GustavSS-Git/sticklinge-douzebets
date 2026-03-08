@@ -37,6 +37,17 @@ export default function Auth({ mode }: AuthPageProps) {
         setLoading(false);
         return;
       }
+      // Check nickname uniqueness
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('nickname', nickname.trim())
+        .maybeSingle();
+      if (existing) {
+        toast.error('Detta nickname används redan. Välj ett annat.');
+        setLoading(false);
+        return;
+      }
       const { error } = await signUp(email, password, nickname.trim());
       if (error) {
         toast.error(error);
