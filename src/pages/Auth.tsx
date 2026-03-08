@@ -94,30 +94,17 @@ export default function Auth({ mode }: AuthPageProps) {
           </div>
 
           {isRegister && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="username">Användarnamn</Label>
-                <Input
-                  id="username"
-                  placeholder="ditt_namn"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  className="bg-card"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nickname">Smeknamn (visas publikt)</Label>
-                <Input
-                  id="nickname"
-                  placeholder="Eurovision-experten"
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  required
-                  className="bg-card"
-                />
-              </div>
-            </>
+            <div className="space-y-2">
+              <Label htmlFor="nickname">Smeknamn (visas publikt)</Label>
+              <Input
+                id="nickname"
+                placeholder="Eurovision-experten"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
+                required
+                className="bg-card"
+              />
+            </div>
           )}
 
           <div className="space-y-2">
