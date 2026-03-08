@@ -26,11 +26,6 @@ export default function Auth({ mode }: AuthPageProps) {
     setLoading(true);
 
     if (isRegister) {
-      if (username.trim().length < 3) {
-        toast.error('Användarnamn måste vara minst 3 tecken');
-        setLoading(false);
-        return;
-      }
       if (nickname.trim().length < 1) {
         toast.error('Ange ett smeknamn');
         setLoading(false);
@@ -41,7 +36,7 @@ export default function Auth({ mode }: AuthPageProps) {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, username.trim(), nickname.trim());
+      const { error } = await signUp(email, password, nickname.trim());
       if (error) {
         toast.error(error);
       } else {
