@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,17 @@ export default function Auth({ mode }: AuthPageProps) {
       }
       if (password.length < 6) {
         toast.error('Lösenord måste vara minst 6 tecken');
+        setLoading(false);
+        return;
+      }
+      // Check nickname uniqueness
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('nickname', nickname.trim())
+        .maybeSingle();
+      if (existing) {
+        toast.error('Detta nickname används redan. Välj ett annat.');
         setLoading(false);
         return;
       }
