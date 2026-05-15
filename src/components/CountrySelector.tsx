@@ -47,6 +47,7 @@ export function CountrySelector({
             {availableCountries.map((country) => (
               <SelectItem key={country.id} value={country.id}>
                 <span className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground tabular-nums w-5 text-right">{country.display_order}.</span>
                   <span className="text-lg">{country.flag_emoji}</span>
                   <span>{country.country_name}</span>
                 </span>
