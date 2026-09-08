@@ -19,6 +19,19 @@ export default function Auth({ mode }: AuthPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const handleResend = async () => {
+    setResending(true);
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) {
+      toast.error('Kunde inte skicka mailet just nu. Försök igen om en stund.');
+    } else {
+      toast.success('Verifieringsmailet är skickat igen.');
+    }
+    setResending(false);
+  };
 
   const isRegister = mode === 'register';
 
