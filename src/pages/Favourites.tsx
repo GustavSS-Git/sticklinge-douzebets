@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountries } from '@/hooks/useCountries';
 import { useIsLocked } from '@/hooks/useSettings';
@@ -29,6 +29,9 @@ export default function Favourites() {
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [autoStatus, setAutoStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const loadedRef = useRef(false);
+  const idRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -41,6 +44,7 @@ export default function Favourites() {
       .then(({ data }) => {
         if (data) {
           setExistingId(data.id);
+          idRef.current = data.id;
           setIsSubmitted(data.is_submitted);
           setSelections({
             first: data.first_favourite,
@@ -48,6 +52,7 @@ export default function Favourites() {
             third: data.third_favourite,
           });
         }
+        loadedRef.current = true;
       });
   }, [user]);
 
@@ -88,28 +93,47 @@ export default function Favourites() {
   const allSelected = Object.values(selections).every(Boolean);
   const usedIds = Object.values(selections);
 
-  const handleSave = async () => {
-    if (!user || !allSelected || favouritesLocked) return;
-    setSaving(true);
-
-    const payload = {
+  const persist = async (submit: boolean) => {
+    if (!user || favouritesLocked) return { error: null as any };
+    const payload: any = {
       user_id: user.id,
       first_favourite: selections.first,
       second_favourite: selections.second,
       third_favourite: selections.third,
-      is_submitted: true,
-      submitted_at: new Date().toISOString(),
       year: 2026,
     };
-
-    let error;
-    if (existingId) {
-      ({ error } = await supabase.from('favourite_votes').update(payload).eq('id', existingId));
-    } else {
-      const res = await supabase.from('favourite_votes').insert(payload).select().single();
-      error = res.error;
-      if (res.data) setExistingId(res.data.id);
+    if (submit) {
+      payload.is_submitted = true;
+      payload.submitted_at = new Date().toISOString();
     }
+
+    if (idRef.current) {
+      return await supabase.from('favourite_votes').update(payload).eq('id', idRef.current);
+    }
+    const res = await supabase.from('favourite_votes').insert(payload).select().single();
+    if (res.data) {
+      idRef.current = res.data.id;
+      setExistingId(res.data.id);
+    }
+    return res;
+  };
+
+  // Autosave (draft) on every change
+  useEffect(() => {
+    if (!loadedRef.current || !user || favouritesLocked) return;
+    setAutoStatus('saving');
+    const t = setTimeout(async () => {
+      const { error } = await persist(false);
+      setAutoStatus(error ? 'idle' : 'saved');
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selections, user, favouritesLocked]);
+
+  const handleSave = async () => {
+    if (!user || !allSelected || favouritesLocked) return;
+    setSaving(true);
+    const { error } = await persist(true);
 
     if (error) {
       toast.error('Kunde inte spara. Försök igen.');
@@ -141,6 +165,11 @@ export default function Favourites() {
           <p className="text-sm text-muted-foreground">
             Vilka låtar tycker du borde vinna? Rösta på dina topp 3!
           </p>
+          {!favouritesLocked && autoStatus !== 'idle' && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {autoStatus === 'saving' ? 'Sparar...' : 'Sparat ✓'}
+            </p>
+          )}
         </div>
 
         {lockTime && (
