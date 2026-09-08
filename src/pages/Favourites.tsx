@@ -165,6 +165,11 @@ export default function Favourites() {
           <p className="text-sm text-muted-foreground">
             Vilka låtar tycker du borde vinna? Rösta på dina topp 3!
           </p>
+          {!favouritesLocked && autoStatus !== 'idle' && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {autoStatus === 'saving' ? 'Sparar...' : 'Sparat ✓'}
+            </p>
+          )}
         </div>
 
         {lockTime && (
