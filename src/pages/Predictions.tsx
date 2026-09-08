@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountries } from '@/hooks/useCountries';
 import { useIsLocked } from '@/hooks/useSettings';
@@ -22,6 +22,9 @@ export default function Predictions() {
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [autoStatus, setAutoStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const loadedRef = useRef(false);
+  const idRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -34,6 +37,7 @@ export default function Predictions() {
       .then(({ data }) => {
         if (data) {
           setExistingId(data.id);
+          idRef.current = data.id;
           setIsSubmitted(data.is_submitted);
           setSwedenPosition((data as any).sweden_final_position ?? null);
           setSelections({
@@ -45,17 +49,16 @@ export default function Predictions() {
             last: data.last_place,
           });
         }
+        loadedRef.current = true;
       });
   }, [user]);
 
   const allSelected = Object.values(selections).every(Boolean) && swedenPosition !== null;
   const usedIds = Object.values(selections);
 
-  const handleSave = async () => {
-    if (!user || !allSelected || predictionsLocked) return;
-    setSaving(true);
-
-    const payload = {
+  const persist = async (submit: boolean) => {
+    if (!user || predictionsLocked) return { error: null as any };
+    const payload: any = {
       user_id: user.id,
       first_place: selections.first,
       second_place: selections.second,
@@ -64,20 +67,40 @@ export default function Predictions() {
       fifth_place: selections.fifth,
       last_place: selections.last,
       sweden_final_position: swedenPosition,
-      is_submitted: true,
-      submitted_at: new Date().toISOString(),
       year: 2026,
-    } as any;
-
-    let error;
-    if (existingId) {
-      ({ error } = await supabase.from('predictions').update(payload).eq('id', existingId));
-    } else {
-      const res = await supabase.from('predictions').insert(payload).select().single();
-      error = res.error;
-      if (res.data) setExistingId(res.data.id);
+    };
+    if (submit) {
+      payload.is_submitted = true;
+      payload.submitted_at = new Date().toISOString();
     }
 
+    if (idRef.current) {
+      return await supabase.from('predictions').update(payload).eq('id', idRef.current);
+    }
+    const res = await supabase.from('predictions').insert(payload).select().single();
+    if (res.data) {
+      idRef.current = res.data.id;
+      setExistingId(res.data.id);
+    }
+    return res;
+  };
+
+  // Autosave (draft) on every change
+  useEffect(() => {
+    if (!loadedRef.current || !user || predictionsLocked) return;
+    setAutoStatus('saving');
+    const t = setTimeout(async () => {
+      const { error } = await persist(false);
+      setAutoStatus(error ? 'idle' : 'saved');
+    }, 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selections, swedenPosition, user, predictionsLocked]);
+
+  const handleSave = async () => {
+    if (!user || !allSelected || predictionsLocked) return;
+    setSaving(true);
+    const { error } = await persist(true);
     if (error) {
       toast.error('Kunde inte spara. Försök igen.');
     } else {
