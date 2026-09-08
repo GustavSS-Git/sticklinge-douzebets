@@ -10,7 +10,7 @@ interface AuthContextType {
   profile: Profile | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, nickname: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, nickname: string) => Promise<{ error: string | null; needsVerification?: boolean }>;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -64,20 +64,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, nickname: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { nickname },
+        emailRedirectTo: `${window.location.origin}/logga-in`,
       },
     });
     if (error) return { error: error.message };
-    return { error: null };
+    return { error: null, needsVerification: !data.session };
   };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) return { error: error.message };
+    if (error) {
+      const msg = error.message.toLowerCase();
+      if (msg.includes('not confirmed') || msg.includes('email_not_confirmed')) {
+        return { error: 'EMAIL_NOT_CONFIRMED' };
+      }
+      return { error: error.message };
+    }
     return { error: null };
   };
 

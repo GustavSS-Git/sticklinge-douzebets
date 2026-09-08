@@ -19,6 +19,19 @@ export default function Auth({ mode }: AuthPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [nickname, setNickname] = useState('');
+  const [awaitingVerification, setAwaitingVerification] = useState(false);
+  const [resending, setResending] = useState(false);
+
+  const handleResend = async () => {
+    setResending(true);
+    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    if (error) {
+      toast.error('Kunde inte skicka mailet just nu. Försök igen om en stund.');
+    } else {
+      toast.success('Verifieringsmailet är skickat igen.');
+    }
+    setResending(false);
+  };
 
   const isRegister = mode === 'register';
 
@@ -53,16 +66,21 @@ export default function Auth({ mode }: AuthPageProps) {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, nickname.trim());
+      const { error, needsVerification } = await signUp(email, password, nickname.trim());
       if (error) {
         toast.error(error);
+      } else if (needsVerification) {
+        setAwaitingVerification(true);
       } else {
         toast.success('Konto skapat! Du är nu inloggad.');
         navigate('/tippa');
       }
     } else {
       const { error } = await signIn(email, password);
-      if (error) {
+      if (error === 'EMAIL_NOT_CONFIRMED') {
+        setAwaitingVerification(true);
+        toast.error('Din e-postadress är inte verifierad. Kolla din inkorg eller begär ett nytt verifieringsmail.');
+      } else if (error) {
         toast.error('Fel e-post eller lösenord');
       } else {
         toast.success('Välkommen tillbaka!');
@@ -72,6 +90,32 @@ export default function Auth({ mode }: AuthPageProps) {
 
     setLoading(false);
   };
+
+  if (awaitingVerification) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="fixed top-[-30%] left-[-20%] w-[70vw] h-[70vw] rounded-full bg-primary/8 blur-[120px]" />
+        <div className="relative w-full max-w-sm">
+          <h1 className="text-2xl font-display font-bold mb-3">Verifiera din e-post</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Vi har skickat ett verifieringsmail till din e-postadress. Klicka på länken i mailet för att verifiera ditt konto.
+          </p>
+          <Button
+            onClick={handleResend}
+            disabled={resending || !email}
+            className="w-full gradient-eurovision border-0 font-display font-semibold text-primary-foreground"
+          >
+            {resending ? 'Skickar...' : 'Skicka verifieringsmailet igen'}
+          </Button>
+          <p className="text-sm text-muted-foreground text-center mt-6">
+            <Link to="/logga-in" className="text-primary hover:underline" onClick={() => setAwaitingVerification(false)}>
+              Tillbaka till inloggning
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
