@@ -129,13 +129,18 @@ export default function Auth({ mode }: AuthPageProps) {
             <Input
               id="password"
               type="password"
-              placeholder="Minst 6 tecken"
+              placeholder="Minst 8 tecken"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={8}
               className="bg-card"
             />
+            {isRegister && (
+              <p className="text-xs text-muted-foreground">
+                Lösenordet måste vara minst 8 tecken. Får inte lämnas tomt.
+              </p>
+            )}
           </div>
 
           <Button
