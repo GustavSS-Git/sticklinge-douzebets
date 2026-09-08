@@ -180,10 +180,16 @@ export default function Auth({ mode }: AuthPageProps) {
               minLength={8}
               className="bg-card"
             />
-            {isRegister && (
+            {isRegister ? (
               <p className="text-xs text-muted-foreground">
                 Lösenordet måste vara minst 8 tecken. Får inte lämnas tomt.
               </p>
+            ) : (
+              <div className="text-right">
+                <Link to="/forgot-password" className="text-xs text-primary hover:underline">
+                  Glömt lösenord?
+                </Link>
+              </div>
             )}
           </div>
 
