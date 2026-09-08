@@ -53,16 +53,21 @@ export default function Auth({ mode }: AuthPageProps) {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, nickname.trim());
+      const { error, needsVerification } = await signUp(email, password, nickname.trim());
       if (error) {
         toast.error(error);
+      } else if (needsVerification) {
+        setAwaitingVerification(true);
       } else {
         toast.success('Konto skapat! Du är nu inloggad.');
         navigate('/tippa');
       }
     } else {
       const { error } = await signIn(email, password);
-      if (error) {
+      if (error === 'EMAIL_NOT_CONFIRMED') {
+        setAwaitingVerification(true);
+        toast.error('Din e-postadress är inte verifierad. Kolla din inkorg eller begär ett nytt verifieringsmail.');
+      } else if (error) {
         toast.error('Fel e-post eller lösenord');
       } else {
         toast.success('Välkommen tillbaka!');
