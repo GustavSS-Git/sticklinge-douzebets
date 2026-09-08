@@ -130,6 +130,11 @@ export default function Predictions() {
           <p className="text-sm text-muted-foreground">
             Förutspå topp 5 och vem som kommer sist i Eurovision 2026
           </p>
+          {!predictionsLocked && autoStatus !== 'idle' && (
+            <p className="text-xs text-muted-foreground mt-1">
+              {autoStatus === 'saving' ? 'Sparar...' : 'Sparat ✓'}
+            </p>
+          )}
         </div>
 
         {lockTime && (
