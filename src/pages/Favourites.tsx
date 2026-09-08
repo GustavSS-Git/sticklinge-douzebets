@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCountries } from '@/hooks/useCountries';
 import { useIsLocked } from '@/hooks/useSettings';
@@ -29,6 +29,9 @@ export default function Favourites() {
   const [saving, setSaving] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [autoStatus, setAutoStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const loadedRef = useRef(false);
+  const idRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -41,6 +44,7 @@ export default function Favourites() {
       .then(({ data }) => {
         if (data) {
           setExistingId(data.id);
+          idRef.current = data.id;
           setIsSubmitted(data.is_submitted);
           setSelections({
             first: data.first_favourite,
@@ -48,6 +52,7 @@ export default function Favourites() {
             third: data.third_favourite,
           });
         }
+        loadedRef.current = true;
       });
   }, [user]);
 
