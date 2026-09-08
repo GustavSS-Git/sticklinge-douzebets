@@ -32,8 +32,13 @@ export default function Auth({ mode }: AuthPageProps) {
         setLoading(false);
         return;
       }
-      if (password.length < 6) {
-        toast.error('Lösenord måste vara minst 6 tecken');
+      if (password.trim().length === 0) {
+        toast.error('Ange ett lösenord');
+        setLoading(false);
+        return;
+      }
+      if (password.length < 8) {
+        toast.error('Lösenordet måste vara minst 8 tecken');
         setLoading(false);
         return;
       }
