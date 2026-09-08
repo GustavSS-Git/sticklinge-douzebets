@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Predictions from "./pages/Predictions";
 import Favourites from "./pages/Favourites";
 import Scoreboard from "./pages/Scoreboard";
@@ -39,6 +41,8 @@ const App = () => (
             <Route path="/" element={<PublicRoute><Landing /></PublicRoute>} />
             <Route path="/logga-in" element={<PublicRoute><Auth mode="login" /></PublicRoute>} />
             <Route path="/registrera" element={<PublicRoute><Auth mode="register" /></PublicRoute>} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/tippa" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
             <Route path="/favoriter" element={<ProtectedRoute><Favourites /></ProtectedRoute>} />
             <Route path="/resultat" element={<ProtectedRoute><Scoreboard /></ProtectedRoute>} />
