@@ -22,24 +22,24 @@ export const RecoveryEmail = ({
   siteName,
   confirmationUrl,
 }: RecoveryEmailProps) => (
-  <Html lang="en" dir="ltr">
+  <Html lang="sv" dir="ltr">
     <Head>
       <style>{darkModeCss}</style>
     </Head>
-    <Preview>Reset your password for {siteName}</Preview>
+    <Preview>Återställ ditt lösenord för {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>Reset your password</Heading>
+        <Heading style={h1}>Återställ ditt lösenord</Heading>
         <Text style={text}>
-          We received a request to reset your password for {siteName}. Click
-          the button below to choose a new password.
+          Vi har fått en begäran om att återställa ditt lösenord för {siteName}.
+          Klicka på knappen nedan för att välja ett nytt lösenord (minst 8 tecken).
         </Text>
         <Button className="dm-btn" style={button} href={confirmationUrl}>
-          Reset Password
+          Återställ lösenord
         </Button>
         <Text style={footer}>
-          If you didn't request a password reset, you can safely ignore this
-          email. Your password will not be changed.
+          Om du inte har begärt en återställning kan du ignorera det här mailet.
+          Ditt lösenord ändras inte.
         </Text>
       </Container>
     </Body>
@@ -63,11 +63,11 @@ const text = {
   margin: '0 0 25px',
 }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: 'hsl(325, 80%, 55%)',
   color: '#ffffff',
   fontSize: '14px',
-  border: '1px solid #000000',
-  borderRadius: '8px',
+  border: '1px solid hsl(325, 80%, 55%)',
+  borderRadius: '12px',
   padding: '12px 20px',
   textDecoration: 'none',
 }
