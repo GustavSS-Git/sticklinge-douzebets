@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useCountries } from '@/hooks/useCountries';
+import { PROFILE_COLUMNS } from '@/contexts/AuthContext';
 import { useIsLocked, useSettings } from '@/hooks/useSettings';
 import { AppLayout } from '@/components/AppLayout';
 import { CountdownTimer } from '@/components/CountdownTimer';
@@ -54,7 +55,7 @@ export default function Scoreboard() {
   const { data: profiles = [] } = useQuery({
     queryKey: ['all-profiles'],
     queryFn: async () => {
-      const { data } = await supabase.from('profiles').select('*');
+      const { data } = await supabase.from('profiles').select(PROFILE_COLUMNS);
       return data ?? [];
     },
   });

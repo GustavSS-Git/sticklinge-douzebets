@@ -361,7 +361,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_list_user_emails: {
+        Args: never
+        Returns: {
+          email: string
+          user_id: string
+        }[]
+      }
+      favourites_open: { Args: never; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      predictions_open: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

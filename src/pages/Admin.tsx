@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, PROFILE_COLUMNS } from '@/contexts/AuthContext';
 import { useCountries } from '@/hooks/useCountries';
 import { AppLayout } from '@/components/AppLayout';
 import { CountrySelector } from '@/components/CountrySelector';
@@ -52,8 +52,13 @@ export default function Admin() {
   const { data: profiles = [] } = useQuery({
     queryKey: ['admin-profiles'],
     queryFn: async () => {
-      const { data } = await supabase.from('profiles').select('*');
-      return data ?? [];
+      // Emails are only exposed to admins via a SECURITY DEFINER function, not via the profiles table.
+      const [{ data: rows }, { data: emails }] = await Promise.all([
+        supabase.from('profiles').select(PROFILE_COLUMNS),
+        supabase.rpc('admin_list_user_emails'),
+      ]);
+      const emailByUser = new Map((emails ?? []).map((e) => [e.user_id, e.email]));
+      return (rows ?? []).map((p) => ({ ...p, email: emailByUser.get(p.user_id) ?? null }));
     },
   });
 

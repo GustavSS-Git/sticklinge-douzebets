@@ -1,9 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { corsHeaders, jsonResponse, requireAdmin } from '../_shared/require-admin.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,6 +11,9 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
+
+    const auth = await requireAdmin(req, supabaseAdmin)
+    if ('error' in auth) return auth.error
 
     // Reset all calculated points to 0
     await supabaseAdmin
@@ -29,12 +28,8 @@ Deno.serve(async (req) => {
       .update({ results_published: false })
       .neq('id', '00000000-0000-0000-0000-000000000000')
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return jsonResponse({ success: true })
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return jsonResponse({ error: err.message }, 500)
   }
 })

@@ -9,15 +9,6 @@ import { CountrySelector } from '@/components/CountrySelector';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Save, CheckCircle2, Heart } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import type { Tables } from '@/integrations/supabase/types';
-
-type Country = Tables<'countries'>;
-
-function getCountryById(countries: Country[], id: string | null) {
-  if (!id) return null;
-  return countries.find((c) => c.id === id) ?? null;
-}
 
 export default function Favourites() {
   const { user } = useAuth();
@@ -55,40 +46,6 @@ export default function Favourites() {
         loadedRef.current = true;
       });
   }, [user]);
-
-  // Leaderboard data
-  const { data: allFavourites = [] } = useQuery({
-    queryKey: ['all-favourites'],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from('favourite_votes')
-        .select('*')
-        .eq('year', 2026)
-        .eq('is_submitted', true);
-      return data ?? [];
-    },
-  });
-
-  const favouriteScores = new Map<string, { points: number; votes: number }>();
-  allFavourites.forEach((fav) => {
-    [
-      { id: fav.first_favourite, pts: 3 },
-      { id: fav.second_favourite, pts: 2 },
-      { id: fav.third_favourite, pts: 1 },
-    ].forEach(({ id, pts }) => {
-      if (!id) return;
-      const existing = favouriteScores.get(id) ?? { points: 0, votes: 0 };
-      favouriteScores.set(id, { points: existing.points + pts, votes: existing.votes + 1 });
-    });
-  });
-
-  const sortedFavourites = [...favouriteScores.entries()]
-    .sort((a, b) => b[1].points - a[1].points)
-    .map(([countryId, score], idx) => ({
-      country: getCountryById(countries, countryId),
-      ...score,
-      rank: idx + 1,
-    }));
 
   const allSelected = Object.values(selections).every(Boolean);
   const usedIds = Object.values(selections);

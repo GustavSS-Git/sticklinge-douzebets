@@ -3,7 +3,9 @@ import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
-type Profile = Tables<'profiles'>;
+// `email` is not readable by regular users (column-level grant), so it's not part of the client profile.
+type Profile = Omit<Tables<'profiles'>, 'email'>;
+export const PROFILE_COLUMNS = 'id, user_id, nickname, is_admin, created_at, updated_at';
 
 interface AuthContextType {
   user: User | null;
@@ -27,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('*')
+      .select(PROFILE_COLUMNS)
       .eq('user_id', userId)
       .single();
     setProfile(data);
