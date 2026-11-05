@@ -4,7 +4,13 @@ A Eurovision prediction game I made for my friends and family.
 
 **Live:** [douzebets.slanesens.com](https://douzebets.slanesens.com) (the UI is in Swedish)
 
-<!-- Screenshots: add 2–3 images here, e.g. ![Predictions](docs/predictions.png) -->
+<table>
+  <tr>
+    <td align="center" valign="top"><img src="docs/screenshots/landing.png" alt="Landing page" width="280"><br><sub>Landing page</sub></td>
+    <td align="center" valign="top"><img src="docs/screenshots/predictions.png" alt="Making a top-5 prediction" width="260"><br><sub>Predicting the top 5</sub></td>
+    <td align="center" valign="top"><img src="docs/screenshots/favourites.png" alt="Voting for favourite songs" width="260"><br><sub>Voting for favourites</sub></td>
+  </tr>
+</table>
 
 ## About this project
 
@@ -49,20 +55,22 @@ src/
   hooks/            Data hooks (countries, settings, lock state)
   integrations/     Supabase client and generated DB types
 supabase/
-  migrations/       Database schema, RLS policies and DB functions
+  migrations/       Original database schema, RLS policies and triggers
   functions/
     calculate-scores/   Admin-only: scores all predictions, optionally publishes the scoreboard
     reset-results/      Admin-only: clears scores and unpublishes
     delete-user/        Admin-only: removes a user and their data
     auth-email-hook/    Renders and queues auth emails
     _shared/            Scoring logic, admin check, email templates
+drizzle/
+  migrations/       Later migrations applied by Lovable, including the security hardening
 ```
 
 ### Data model
 
 | Table | Purpose |
 | --- | --- |
-| `profiles` | Nickname and admin flag per user (created by a trigger on signup) |
+| `profiles` | Nickname and admin flag per user (created by a trigger on signup, which also makes the site owner's account admin) |
 | `countries` | The finalists for the year |
 | `predictions` | Each user's top 5, last place, Sweden guess and calculated points |
 | `favourite_votes` | Each user's top 3 favourite songs |
@@ -71,7 +79,7 @@ supabase/
 
 ## Security: what went wrong, and what I fixed
 
-Lovable produced a working app quickly, but a later review turned up real problems. All of these are fixed in [`20261104120000_security_hardening.sql`](supabase/migrations/20261104120000_security_hardening.sql) and the edge functions:
+Lovable produced a working app quickly, but a later review turned up real problems. All of these are fixed in [`drizzle/migrations/`](drizzle/migrations/) and the edge functions:
 
 | Problem | Fix |
 | --- | --- |
@@ -81,7 +89,6 @@ Lovable produced a working app quickly, but a later review turned up real proble
 | Users could write their own `calculated_points` | Points are writable only by the server (service role) |
 | The prediction deadline was only enforced in the browser | RLS policies check `predictions_open()` / `favourites_open()` on every insert and update |
 | Other players' picks and the real results could be read before they were revealed | SELECT policies hide them until the deadline or until results are published |
-| Admin rights were granted by a hardcoded email address in the signup trigger | Removed; admin is now assigned manually in the database |
 
 **What I took away:** with Supabase the browser talks directly to the database, so every rule has to live in RLS policies and grants. Hiding a button in the UI protects nothing.
 
@@ -97,4 +104,4 @@ npm run dev     # http://localhost:8080
 npm test        # unit tests for the scoring logic
 ```
 
-To point the app at your own Supabase project, set `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID` in `.env`, then apply the migrations in `supabase/migrations/`.
+To point the app at your own Supabase project, set `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` and `VITE_SUPABASE_PROJECT_ID` in `.env`, then apply the migrations in `supabase/migrations/` followed by `drizzle/migrations/`.
