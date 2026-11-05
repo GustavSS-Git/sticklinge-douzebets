@@ -10,8 +10,6 @@ A Eurovision prediction game I made for my friends and family.
 
 This was my first "vibe-coded" website, built entirely with [Lovable](https://lovable.dev) and [Supabase](https://supabase.com). It shipped with more security issues than I could count. Still, it taught me a lot about how tools like Lovable can turn an idea into something visual and usable in almost no time, and about what they leave for you to check yourself.
 
-> I have built more advanced projects since this one. This repo is kept as an honest record of where I started.
-
 ## How the game works
 
 Before the Eurovision final, every player:
