@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793881243854,
+      "tag": "0000_apply_security_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793881259587,
+      "tag": "0001_restrict_profiles_email_column",
+      "breakpoints": true
+    }
+  ]
+}
